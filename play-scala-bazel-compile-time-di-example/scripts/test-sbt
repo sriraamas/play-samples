@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+echo "+----------------------------+"
+echo "| Executing tests with bazel  |" 
+echo "+----------------------------+"
+bazel test test

@@ -1,0 +1,90 @@
+load("@io_bazel_rules_play_routes//play-routes:play-routes.bzl", "play_routes")
+
+play_routes(
+  name = "play-routes",
+  srcs = ["conf/routes"] + glob(["conf/*.routes"]),
+  include_play_imports = True,
+  generate_reverse_router = True,
+  routes_imports = [],
+)
+
+load("@io_bazel_rules_twirl//twirl:twirl.bzl", "twirl_templates")
+twirl_templates(
+  name = "twirl-templates",
+  source_directory = "app",
+  include_play_imports = True,
+  srcs = glob(["app/views/**/*.scala.html"])
+    + glob(["app/views/**/*.scala.xml"])
+    + glob(["app/views/**/*.scala.js"])
+    + glob(["app/views/**/*.scala.txt"]),
+  additional_imports = [],
+)
+
+load("@rules_scala_annex//rules:scala_with_scalafmt.bzl", "scala_binary", "scala_test")
+scala_binary(
+  name = "scala-compile-time-di-example",
+  srcs = glob(["app/**/*.scala"])  + [":twirl-templates", ":play-routes"],
+  visibility = ["//visibility:public"],
+  main_class = "play.core.server.ProdServerStart",
+  resources = glob(["conf/**"]),
+  resource_strip_prefix = "conf",
+  javacopts = [
+      "-Xlint:unchecked",
+    "-Xlint:deprecation",
+  ],
+  scalacopts = [
+     "-encoding", "utf8",
+  "-deprecation",
+  "-feature",
+  "-unchecked",
+  ],
+  jvm_flags = [
+  	"-Dhttp.port=9100",
+  	"-Dapplication.name=scala-compile-time-di-example",
+  ],
+  runtime_deps= [
+       "@maven//:com_typesafe_play_play_server_2_12",
+       "@maven//:com_typesafe_play_play_akka_http_server_2_12",
+       "@maven//:org_slf4j_slf4j_simple",
+  ],
+  deps = [
+      "@maven//:com_typesafe_play_play_2_12",
+        "@maven//:com_typesafe_play_filters_helpers_2_12",
+        "@maven//:com_typesafe_play_twirl_api_2_12",
+        "@maven//:javax_inject_javax_inject"
+  ],
+)
+
+scala_test(
+  name = "test",
+  srcs = glob(["test/**/*.scala"]),
+  visibility = ["//visibility:public"],
+  javacopts = [
+    "-Xlint:unchecked",
+    "-Xlint:deprecation",
+  ],
+  scalacopts = [
+    "-encoding", "utf8",
+    "-deprecation",
+    "-feature",
+    "-unchecked",
+  ],
+  runtime_deps= [
+    "@maven//:com_typesafe_play_play_server_2_12",
+    "@maven//:com_typesafe_play_play_akka_http_server_2_12",
+    "@maven//:org_slf4j_slf4j_simple",
+  ],
+  deps = [
+    ":scala-compile-time-di-example",
+    "@maven//:com_typesafe_play_play_2_12",
+    "@maven//:com_typesafe_akka_akka_stream_2_12",
+    "@maven//:com_typesafe_play_play_ws_2_12",
+    "@maven//:com_typesafe_play_play_ahc_ws_2_12",
+    "@maven//:org_scalactic_scalactic_2_12",
+    "@maven//:com_typesafe_akka_akka_actor_2_12",
+    "@maven//:org_seleniumhq_selenium_selenium_api",
+    "@maven//:org_scalatest_scalatest_2_12",
+    "@maven//:com_typesafe_play_play_test_2_12",
+    "@maven//:org_scalatestplus_play_scalatestplus_play_2_12",
+  ],
+)
